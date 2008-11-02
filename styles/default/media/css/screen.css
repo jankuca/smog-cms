@@ -1,0 +1,175 @@
+body
+{
+	margin: 0;
+	padding: 0;
+	background: #B8B8B8 url('../images/body.png') repeat-x;
+	color: #FFF;
+	font-family: Arial,sans-serif;
+	font-size: 12px;
+	text-align: center;
+}
+
+/* -- general elements -- */
+/* -- -- anchors -- */
+a { color: #FFA; }
+a:hover { color: #CF7; }
+
+/* -- -- headings -- */
+h1
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 311px;
+	height: 42px;
+	margin: 40px 0 14px 20px;
+	padding: 0;
+	font-size: 1.3em;
+}
+h1 span
+{
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%;
+	height: 100%;
+	background: url('../images/logo.png') no-repeat;
+}
+h3
+{
+	height: 40px;
+	margin: 0;
+	padding-top: 4px;
+	font-size: 1.8em;
+	font-weight: normal;
+	/*letter-spacing: -1px;*/
+}
+
+/* -- -- paragraph -- */
+p { margin: 0; padding: 0; line-height: 1.5em; }
+div#content p { text-align: justify; }
+/* -- structure -- */
+div#web
+{
+	width: 838px;
+	margin: 0 auto;
+	text-align: left;
+}
+ul#menu
+{
+	float: right;
+	margin: 0;
+	padding: 60px 20px 0 0;
+}
+div#content
+{
+	clear: both;
+	position: relative;
+	width: 824px;
+	padding: 8px 8px 25px;
+	background: /*#DDD*/ url('../images/content.png') repeat-y 1px 0; /* bug: background image is 2px thiner than the div! */
+	color: #000;
+}
+div#content-top
+{
+	position: absolute;
+	top: 0; left: 0;
+	width: 840px;
+	height: 255px;
+	background: url('../images/content-top.png') no-repeat;
+}
+div#footer
+{
+	padding-top: 10px;
+	background: url('../images/content-bottom.png') no-repeat 1px 0;
+	color: #555;
+}
+
+p#slogan, .hidden { display: none; }
+.clear { clear: both; }
+ul#menu li { display: inline; padding: 0 0 0 15px; }
+ul#menu ul { display: none; }
+ul#menu li:hover ul { display: block; }
+ul#menu a { color: #DDD; text-decoration: none; }
+ul#menu a:hover { color: #FFA; }
+
+div#intro
+{
+	height: 137px;
+	background: #222 url('../images/intro-bg.png') no-repeat;
+}
+div#intro p
+{
+	float: left;
+	display: inline;
+	position: relative;
+	width: 530px;
+	height: 65px;
+	padding-top: 37px;
+	margin-left: 32px;
+	color: #EEE;
+	font-size: 2.2em;
+	text-align: right;
+	line-height: 1.1em;
+	letter-spacing: 0.1em;
+}
+div#intro p strong
+{
+	font-size: 0.8em;
+	font-weight: normal;
+	letter-spacing: 2px;
+}
+div#intro p span
+{
+	position: absolute;
+	top: 37px; left: 0;
+	width: 100%;
+	height: 100%;
+	background: url('../images/intro.png') no-repeat;
+}
+
+div.light
+{
+	padding-top: 37px;
+	padding-left: 7px;
+	background: url('../images/light.png') repeat-x;
+}
+div.third
+{
+	float: left;
+	display: inline;
+	width: 230px;
+	margin-left: 20px;
+	padding-right: 20px;
+	text-align: center;
+}
+
+a#button-download
+{
+	float: right;
+	display: inline;
+	position: relative;
+	width: 197px;
+	height: 45px;
+	margin: 37px 27px 0 0;
+	padding-top: 20px;
+	background: #EEE;
+	text-indent: 58px;
+	text-decoration: none;
+}
+a#button-download span
+{
+	position: absolute;
+	top: 0; left: 0;
+	display: block;
+	width: 197px;
+	height: 30px;
+	padding: 35px 0 0 0;
+	background: url('../images/button-download.png');
+	color: #000;
+}
+
+div#footer p { float: left; padding: 10px 35px; font-size: 11px; }
+div#footer p a, div#footer p a:hover { color: #555; }
+div#footer p a:hover { text-decoration: none; }
+p.secure { float: none !important; margin: 0 20px; padding: 12px 0 14px; border-bottom: 1px solid #939393; background: url('../images/lock.png') no-repeat 10px 10px; font-size: 12px !important; }
+p.power { float: right !important; text-align: right !important; }
