@@ -1,0 +1,150 @@
+body
+{
+	margin: 0;
+	padding: 0;
+	font-family: Arial;
+	font-size: 12px;
+	text-align: center;
+}
+
+a { color: #069; }
+a:hover { color: #690; }
+
+div#top
+{
+	height: 19px;
+	min-width: 928px;
+	padding: 4px 10px 4px;
+	background: #333;
+	color: #EEE;
+	font-size: 11px;
+	line-height: 19px;
+}
+	div#top p
+	{
+		float: right;
+		margin: 0;
+		padding: 0; 
+	}
+	div#top a { color: #FFA; }
+h1
+{
+	width: 300px;
+	margin: 80px auto 8px;
+	padding: 0;
+	color: #035;
+	font-family: Cambria,Georgia;
+	font-size: 2.5em;
+	font-weight: normal;
+	text-align: left;
+	letter-spacing: -1px;
+	line-height: 1em;
+}
+
+
+div.alert_error,div.alert_success
+{
+	width: 366px;
+	margin: 80px auto 0;
+	
+}
+div.alert_error div, div.alert_success div
+{
+	min-height: 16px;
+	padding: 15px 12px 16px 40px;
+	text-align: left;
+}
+div.alert_error div { border: 1px solid #FA8; }
+div.alert_success div { border: 1px solid #8C3; }
+div.alert_error
+{
+	border: 5px solid #FFEEE5;
+	background: url('../images/icon-error.png') no-repeat 15px 15px;
+}
+div.alert_success
+{
+	border: 5px solid #E5FFEE;
+	background: url('../images/icon-ok.png') no-repeat 15px 15px;
+}
+div.alert_error ul, div.alert_success ul { padding: 0; }
+div.alert_error ul li
+{
+	background: url('../images/icon-bullet-error.png') no-repeat 0 0;
+	list-style: none;
+	padding-left: 20px;
+}
+
+
+div#authbox
+{
+	width: 336px;
+	margin: 0 auto;
+	padding: 0;
+	background: #DEF url('../images/authbox-bg.png') repeat-y;/*DEF;*/
+	text-align: left;
+}
+	div#authbox div
+	{
+		padding: 2px 0 0;
+		background: url('../images/authbox-top.png') no-repeat;
+	}
+div#img
+{
+	background: url('../images/auth-lock.png');
+}
+div#footer
+{
+	width: 300px;
+	margin: 0 auto;
+	padding: 8px 16px;
+/*	border: 1px solid #444;
+	border-top: 0;
+	background: #444;*/
+	color: #888;
+	font-size: 11px;
+	text-align: left;
+}
+
+form { margin: 0; padding: 0; }
+label { display: block; margin: 0 8px; padding-top: 8px; font-size: 11px; font-weight: bold; }
+div.bottom label { display: inline; margin: auto !important; padding-top: 0 !important; }
+input.text, input.password { width: 316px; margin: 0 0 0 8px; height: 32px; line-height: 32px; font-size: 24px; letter-spacing: -1px; background: #FFF; border: 1px solid #CCC; }
+
+div.bottom { line-height: 34px; height: 35px; margin-top: 8px; padding: 7px 16px 4px !important;  background: #E5F5FF url('../images/authbox-bottom.png') no-repeat !important; }
+div.bottom span.button { float: right; }
+div.bottom span.checkbox { float: left; }
+div.bottom span.checkbox label { font-weight: normal; }
+div.bottom span.checkbox input { position: relative; top: 2px !important; margin: 0 3px 0 0; }
+
+span.button { display: block; height: 31px; margin: 2px 0 1px; background-position: top left; }
+span.button input
+{
+	width: 100%;
+	height: 100%;
+	cursor: pointer;
+	filter: alpha(opacity=0);  
+	-moz-opacity: 0.0;  
+	-khtml-opacity: 0.0;  
+	opacity: 0.0;
+}
+span.button:hover { background-position: bottom left !important; }
+
+tr.active td { background-color: #EFD; }
+tr.inactive td { background-color: #FEE; }
+
+.clear { clear: both; }
+
+ul { list-style: square; margin: 10px 0 0; padding: 0 0 0 16px; }
+ul.links { padding: 0; }
+ul.links li
+{
+	padding-left: 20px;
+	background: transparent url('../images/icon-go.png') no-repeat 0 -1px !important;
+	list-style: none;
+}
+
+img.throbber
+{
+	display: block;
+	margin: 0 0 0 134px;
+}

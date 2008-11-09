@@ -263,7 +263,7 @@ WHERE (session_last_time >= " . (time() - $cfg['etc']['core']['online_offset']);
 		$sql = new SQLObject();
 		$p = new Pages();
 		$p->url = './acp.php?c=users&amp;section=users&amp;page=%page';
-		$p->per_page = 1;
+		$p->per_page = 25;
 		$p->query = "
 SELECT u.user_id,u.user_username,u.user_gender,u.user_group_main,g.group_name
 FROM " . $sql->table('auth_users') . " AS u

@@ -43,7 +43,7 @@ class SQLObject
 	
 	public function escape($string)
 	{
-		return(str_replace('\'','\'\'',$string));
+		return(sqlite_escape_string($string));
 	}
 	
 	public function exec($query)
