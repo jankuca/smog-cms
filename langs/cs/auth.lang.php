@@ -1,5 +1,5 @@
 <?php
-core::s('tpl')->assignVar(array(
+TPL::add(array(
 	'L_MODULE_AUTH' => 'Autorizace',
 	'L_MODULE_AUTH_DESCRIPTION' => 'Správa uživatelů a nastavení oprávnění',
 	

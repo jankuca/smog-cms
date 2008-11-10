@@ -1,5 +1,5 @@
 <?php
-core::s('tpl')->assignVar(array(
+TPL::add(array(
 	'L_ACP' => 'Administrace',
 	'L_ACP_HOME' => 'Úvod administrace',
 	'L_INDEX' => 'Úvod webu',

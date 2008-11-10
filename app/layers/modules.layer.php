@@ -1,10 +1,12 @@
 <?php
 class Modules
 {
-	public $modules = array();
+	public static $modules;
 	
-	public function __construct()
+	public static function load()
 	{
+		self::$modules = new stdClass();
+		
 		$sql = new SQLObject();
 		if($sql->query("SELECT filename,core,seq FROM " . $sql->table('modules') . " WHERE (active = 1 AND core = 1) ORDER BY seq ASC"))
 		{

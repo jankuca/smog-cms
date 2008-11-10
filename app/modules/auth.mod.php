@@ -40,12 +40,12 @@ class module_auth
 		
 		if($_SESSION['logged'])
 		{
-			core::s('tpl')->assignVar(array(
+			TPL::add(array(
 				'CURRENT_USER.ID' => $_SESSION['user']['id'],
 				'CURRENT_USER.USERNAME' => $_SESSION['user']['username'],
 				'CURRENT_USER.EMAIL' => $_SESSION['user']['email']
 			));
-			core::s('tpl')->assignCond('LOGGED',true);
+			TPL::cond('LOGGED',true);
 			
 			if($sql->query("SELECT user_groups FROM " . $sql->table('auth_users') . " WHERE (user_id = " . $_SESSION['user']['id']. ")") && $sql->num_rows())
 			{
@@ -53,7 +53,7 @@ class module_auth
 				$_SESSION['groups'] = array_remove_empty(explode(';',$user->user_groups));
 			}
 		}
-		else core::s('tpl')->assignCond('LOGGED',false);
+		else TPL::cond('LOGGED',false);
 		
 		$this->setAuthkey();
 		$this->saveSessionTime();
@@ -74,8 +74,8 @@ VALUES
 		{
 			setcookie('AUTH_COOKIE',$cookie);
 			
-			core::s('tpl')->assignVar('AUTH_CHALLENGE',$sql->last_insert_id());
-			core::s('tpl')->assignVar('AUTH_SALT',$salt);
+			TPL::add('AUTH_CHALLENGE',$sql->last_insert_id());
+			TPL::add('AUTH_SALT',$salt);
 		}
 	}
 	
@@ -132,7 +132,7 @@ WHERE (user_id = " . $_SESSION['user']['id'] . ")");
 					if(!in_array($p,$_SESSION['permissions'][$item->module][$item->name]))
 					{
 						$_SESSION['permissions'][$item->module][$item->name][] = $p;
-						core::s('tpl')->assignCond('AUTH.PERMISSION.' . strtoupper($item->module) . '.' . strtoupper($item->name) . '.' . strtoupper($p),true);
+						TPL::cond('AUTH.PERMISSION.' . strtoupper($item->module) . '.' . strtoupper($item->name) . '.' . strtoupper($p),true);
 					}
 				}
 			}
@@ -179,25 +179,26 @@ WHERE (session_last_time >= " . (time() - $cfg['etc']['core']['online_offset']);
 		
 		if(!$sql->query($query))
 		{
-			core::s('tpl')->assignCond($loop_key,false);
+			TPL::cond($loop_key,false);
 			core::s('tpl')->assignLoop($loop_key,array());
 			echo($sql->error);
 		}
 		else
 		{
-			core::s('tpl')->assignCond($loop_key,true);
-			$f_users = array();
+			TPL::cond($loop_key,true);
+			$users = new TPLLoop($loop_key);
 			foreach($sql->fetch() as $user)
-				$f_users[] = array(
-					'USER_ID' => $user->user_id,
-					'USER_USERNAME' => $user->user_username,
-					'USER_GROUP' => $user->user_group_main,
-					'USER_SESSION_TIME_OFFSET' => $this->getSessionTimeOffset($user->session_last_time),
-					'conds' => array(
-						'ADMIN' => (in_array(1,(array) $groups) || (int) $user->user_group_main == 1)
-					)
-				);
-			core::s('tpl')->assignLoop($loop_key,$f_users);
+			{
+				$item = new TPLLoopItem();
+				$item->add('USER_ID',$user->user_id);
+				$item->add('USER_USERNAME',$user->user_username);
+				$item->add('USER_GROUP',$user->user_group_main);
+				$item->add('USER_SESSION_TIME_OFFSET',$this->getSessionTimeOffset($user->session_last_time));
+				$item->cond('ADMIN',in_array(1,(array) $groups) || (int) $user->user_group_main == 1);
+				
+				$users->append($item);
+			}
+			$users->pack();
 		}
 	}
 	
@@ -248,14 +249,14 @@ WHERE (session_last_time >= " . (time() - $cfg['etc']['core']['online_offset']);
 		
 		$sql = new SQLObject();
 		if($sql->query("SELECT COUNT(*) AS count_users FROM " . $sql->table('auth_users')))
-			core::s('tpl')->assignVar('USERS_COUNT_USERS',$sql->fetch_one()->count_users);
+			TPL::add('USERS_COUNT_USERS',$sql->fetch_one()->count_users);
 		else
-			core::s('tpl')->assignVar('USERS_COUNT_USERS','N/A');
+			TPL::add('USERS_COUNT_USERS','N/A');
 		
 		if($sql->query("SELECT COUNT(*) AS count_groups FROM " . $sql->table('auth_groups')))
-			core::s('tpl')->assignVar('USERS_COUNT_GROUPS',$sql->fetch_one()->count_groups);
+			TPL::add('USERS_COUNT_GROUPS',$sql->fetch_one()->count_groups);
 		else
-			core::s('tpl')->assignVar('USERS_COUNT_GROUPS','N/A');
+			TPL::add('USERS_COUNT_GROUPS','N/A');
 	}
 	
 	public function users_getUserlist($order = 'user_username ASC')
@@ -292,7 +293,7 @@ ORDER BY " . $order;
 			}
 		}
 		core::s('tpl')->assignLoop('AUTH_USERLIST',$f_users);
-		core::s('tpl')->assignVar('PAGES_USERLIST',$p->browser());
+		TPL::add('PAGES_USERLIST',$p->browser());
 	}
 	
 	public function groups_getGrouplist()
@@ -320,7 +321,7 @@ ORDER BY " . $order;
 			}
 		
 		core::s('tpl')->assignLoop('AUTH_GROUPLIST',$f_groups);
-		core::s('tpl')->assignVar('PAGES_GROUPLIST',$p->browser());
+		TPL::add('PAGES_GROUPLIST',$p->browser());
 	}
 	
 	public function getPermissionsAvailable($empty = false)
@@ -375,16 +376,19 @@ ON p.permission_module_codename||'.mod.php' = m.filename"))
 	}
 }
 
-$this->modules['auth'] = new module_auth();
+Modules::$modules->auth = new module_auth();
 
-core::s('tpl')->addQueue('
-if(/*!$_SESSION[\'logged\'] && */strpos($this->output,\'{AUTH_CHALLENGE}\'))
-	$mod->modules[\'auth\']->getChallenge();');
+TPL::modify('
+if(/*!$_SESSION[\'logged\'] && */strpos(self::$output,\'{AUTH_CHALLENGE}\'))
+	Modules::$modules->auth->getChallenge();');
+
+if(!defined('IN_SYS') || !IN_SYS)
+	Langs::load('auth');
 
 if(defined('IN_AUTHBOX') && IN_AUTHBOX)
 {
-	core::s('tpl')->addTpl('authbox');
-	core::s('tpl')->assignVar('AUTHBOX_ACTION',/*str_replace('http://','https://',SITE_ROOT_PATH).'auth.php'*/'./auth.php');
+	TPL::addTpl('authbox');
+	TPL::add('AUTHBOX_ACTION',/*str_replace('http://','https://',SITE_ROOT_PATH).'auth.php'*/'./auth.php');
 }
 
 /*$sql = new SQLObject();
@@ -399,7 +403,7 @@ if(defined('IN_AUTH') && IN_AUTH)
 {
 	if(isset($_GET['logout']))
 	{
-		$this->modules['auth']->logout();
+		Modules::$modules->auth->logout();
 		if(isset($_GET['redir'])) header('Location: ' . $_GET['redir']);
 		else header('Location: ./authbox.php');
 		die('<h1>Forbidden!</h1>');
@@ -426,46 +430,46 @@ if(defined('IN_AUTH') && IN_AUTH)
 							$_SESSION['user']['username'] = (string) $user->username;
 							$_SESSION['user']['email'] = (string) $user->email;
 							$_SESSION['groups'] = array_remove_empty(explode(';',$user->groups));
-							$this->modules['auth']->setAuthkey();
-							$this->modules['auth']->setLoginTime();
+							Modules::$modules->auth->setAuthkey();
+							Modules::$modules->auth->setLoginTime();
 						
 							if(isset($_GET['redir'])) header('Location: ' . $_GET['redir']);
 							else header('Location: ./acp.php');
 						}
 						else
 						{
-							core::s('tpl')->addTpl('alert_error');
-							core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_LOGIN_INACTIVE_USER}');
-							core::s('tpl')->display();
+							TPL::addTpl('alert_error');
+							TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_LOGIN_INACTIVE_USER}');
+							TPL::pack();
 						}
 						die();
 					}
 					else
 					{
-						core::s('tpl')->addTpl('alert_error');
-						core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_LOGIN_INVALID_PASSWORD}');
-						core::s('tpl')->display();
+						TPL::addTpl('alert_error');
+						TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_LOGIN_INVALID_PASSWORD}');
+						TPL::pack();
 					}
 				}
 				else
 				{
-					core::s('tpl')->addTpl('alert_error');
-					core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_NO_USER}');
-					core::s('tpl')->display();
+					TPL::addTpl('alert_error');
+					TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_NO_USER}');
+					TPL::pack();
 				}
 			}
 			else
 			{
-				core::s('tpl')->addTpl('alert_error');
-				core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_IDENTITY}');
-				core::s('tpl')->display();
+				TPL::addTpl('alert_error');
+				TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_IDENTITY}');
+				TPL::pack();
 			}
 		}
 		else
 		{
-			core::s('tpl')->addTpl('alert_error');
-			core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_NO_CHALLENGE}');
-			core::s('tpl')->display();
+			TPL::addTpl('alert_error');
+			TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_NO_CHALLENGE}');
+			TPL::pack();
 		}
 	}
 	else
@@ -481,18 +485,18 @@ if(defined('IN_ACP') && IN_ACP)
 	{
 		if(!$_SESSION['logged'])
 		{
-			$this->modules['auth']->logout();
+			Modules::$modules->auth->logout();
 			header('Location: ./authbox.php');
 		}
 		
-		core::s('tpl')->addTpl('alert_error');
-		core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PERMISSION_AUTH_ACP_ENTER}');
-		core::s('tpl')->display();
+		TPL::addTpl('alert_error');
+		TPL::add('ALERT_MESSAGE','{L_PERMISSION_AUTH_ACP_ENTER}');
+		TPL::pack();
 		die();
 	}
 	
-	core::s('tpl')->addQueue('
-	$mod->modules[\'menu\']->menu->acp->main->addItem(
+	TPL::modify('
+	Modules::$modules->menu->menu->acp->main->addItem(
 		\'./acp.php?c=users\',
 		\'{L_USERS}\',
 		array(\'ACTIVE\' => (isset($_GET[\'c\']) && $_GET[\'c\'] == \'users\'))
@@ -500,25 +504,25 @@ if(defined('IN_ACP') && IN_ACP)
 	
 	if(!isset($_GET['c']))
 	{
-		$this->modules['auth']->getOnlineUsers(0,array(1),'ONLINE_ADMINS');
+		Modules::$modules->auth->getOnlineUsers(0,array(1),'ONLINE_ADMINS');
 	}
 	else
 	{
 		switch($_GET['c'])
 		{
 			case('users'):
-				core::s('tpl')->addQueue('
-				core::s(\'mod\')->modules[\'menu\']->menu->acp->sub->addItem(
+				TPL::modify('
+				Modules::$modules->menu->menu->acp->sub->addItem(
 					\'./acp.php?c=users\',
 					\'{L_OVERVIEW}\',
 					array(\'ACTIVE\' => (!isset($_GET[\'section\'])))
 				);
-				core::s(\'mod\')->modules[\'menu\']->menu->acp->sub->addItem(
+				Modules::$modules->menu]->menu->acp->sub->addItem(
 					\'./acp.php?c=users&amp;section=users\',
 					\'{L_USERS_USERS}\',
 					array(\'ACTIVE\' => (isset($_GET[\'section\']) && $_GET[\'section\'] == \'users\'))
 				);
-				core::s(\'mod\')->modules[\'menu\']->menu->acp->sub->addItem(
+				Modules::$modules->menu->menu->acp->sub->addItem(
 					\'./acp.php?c=users&amp;section=groups\',
 					\'{L_USERS_GROUPS}\',
 					array(\'ACTIVE\' => (isset($_GET[\'section\']) && $_GET[\'section\'] == \'groups\'))
@@ -526,10 +530,10 @@ if(defined('IN_ACP') && IN_ACP)
 				
 				if(!isset($_GET['section']))
 				{
-					core::s('tpl')->addQueue('
+					TPL::modify('
 					$this->addTpl(\'auth-users\');');
-					$this->modules['auth']->getOnlineUsers(10);
-					$this->modules['auth']->users_getCounts();
+					Modules::$modules->auth->getOnlineUsers(10);
+					Modules::$modules->auth->users_getCounts();
 					core::s('tpl')->setSiteTitle('{L_USERS} &ndash; {L_OVERVIEW}');
 				}
 				else
@@ -539,8 +543,8 @@ if(defined('IN_ACP') && IN_ACP)
 						case('users'):
 							if(!isset($_GET['mode']))
 							{
-								$this->modules['auth']->users_getUserlist();
-								core::s('tpl')->addQueue('
+								Modules::$modules->auth->users_getUserlist();
+								TPL::modify('
 								$this->addTpl(\'auth-users-userlist\');');
 								core::s('tpl')->setSiteTitle('{L_USERS}');
 							}
@@ -549,12 +553,12 @@ if(defined('IN_ACP') && IN_ACP)
 								switch($_GET['mode'])
 								{
 									case('add'):
-										$this->modules['auth']->getGroupsList(0,0,array(1));
+										Modules::$modules->auth->getGroupsList(0,0,array(1));
 										
-										core::s('tpl')->addQueue('
+										TPL::modify('
 										$this->addTpl(\'auth-users-add-user\');');
 										core::s('tpl')->setSiteTitle('{L_USERS} &ndash; {L_USERS_ADD_USER}');
-										core::s('tpl')->assignVar('USERS_ADD_USER_FROM_ACTION','./action.php?c=users&amp;section=users&amp;mode=add');
+										TPL::add('USERS_ADD_USER_FROM_ACTION','./action.php?c=users&amp;section=users&amp;mode=add');
 										core::s('tpl')->setSiteTitle('{L_USERS_ADD_USER}');
 										break;
 								}
@@ -564,9 +568,9 @@ if(defined('IN_ACP') && IN_ACP)
 						case('groups'):
 							if(!isset($_GET['mode']))
 							{
-								$this->modules['auth']->groups_getGrouplist();
-								core::s('tpl')->addQueue('
-								$this->addTpl(\'auth-users-grouplist\');');
+								Modules::$modules->auth->groups_getGrouplist();
+								TPL::modify('
+								self::addTpl(\'auth-users-grouplist\');');
 								core::s('tpl')->setSiteTitle('{L_USERS_GROUPS}');
 							}
 							else
@@ -574,12 +578,12 @@ if(defined('IN_ACP') && IN_ACP)
 								switch($_GET['mode'])
 								{
 									case('add'):
-										$this->modules['auth']->getPermissionsAvailable(true);
+										Modules::$modules->auth->getPermissionsAvailable(true);
 										
-										core::s('tpl')->addQueue('
-										$this->addTpl(\'auth-users-add-group\');');
+										TPL::modify('
+										self::addTpl(\'auth-users-add-group\');');
 										core::s('tpl')->setSiteTitle('{L_USERS} &ndash; {L_USERS_ADD_USER}');
-										core::s('tpl')->assignVar('USERS_ADD_GROUP_FROM_ACTION','./action.php?c=users&amp;section=groups&amp;mode=add');
+										TPL::add('USERS_ADD_GROUP_FROM_ACTION','./action.php?c=users&amp;section=groups&amp;mode=add');
 										break;
 								}
 							}
@@ -613,21 +617,21 @@ if(defined('IN_ACTION') && IN_ACTION)
 										{
 											if(!preg_match('/^([a-zA-Z0-9_ \.\-\*\(\)\[\]\+\.\,\/\?\:\;\'\"\`\~\#\$\%\^\<\>]+)$/',$_POST['user']['username']) || strlen($_POST['user']['username']) < 3 || strlen($_POST['user']['username']) > 32)
 											{
-												core::s('tpl')->addTpl('alert_error');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_USERNAME}');
-												core::s('tpl')->display();
+												TPL::addTpl('alert_error');
+												TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_USERNAME}');
+												TPL::pack();
 											}
 											elseif(!preg_match('/^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/',$_POST['user']['email']))
 											{
-												core::s('tpl')->addTpl('alert_error');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_USERS_EMAIL_ERROR}');
-												core::s('tpl')->display();
+												TPL::addTpl('alert_error');
+												TPL::add('ALERT_MESSAGE','{L_USERS_EMAIL_ERROR}');
+												TPL::pack();
 											}
 											elseif(!preg_match('/^([a-zA-Z0-9_\*\(\)\[\]\+\.\,\/\?\:\;\'\"\`\~\\#\$\%\^\&\<\>]+)$/',$_POST['user']['password']) || strlen($_POST['user']['password']) < 6 || strlen($_POST['user']['password']) > 24)
 											{
-												core::s('tpl')->addTpl('alert_error');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_PASSWORD}');
-												core::s('tpl')->display();
+												TPL::addTpl('alert_error');
+												TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_PASSWORD}');
+												TPL::pack();
 											}
 											else
 											{
@@ -655,37 +659,37 @@ INSERT INTO " . $sql->table('auth_users') . "
 VALUES
 (" . $active . "," . intval($_POST['user']['gender']) . ",'" . $sql->escape($_POST['user']['username']) . "','" . hash('sha256',$_POST['user']['password']) . "','" . $sql->escape($_POST['user']['email']) . "',';" . $groups . ";'," . intval($_POST['user']['group_main']) . ")"))
 												{
-													core::s('tpl')->addTpl('alert_success');
-													core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_USER_ADDED}');
-													core::s('tpl')->display();
+													TPL::addTpl('alert_success');
+													TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_USER_ADDED}');
+													TPL::pack();
 												}
 												else
 												{
-													core::s('tpl')->addTpl('alert_error');
-													core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_ADD_USER_ERROR}');
-													core::s('tpl')->display();
+													TPL::addTpl('alert_error');
+													TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_ADD_USER_ERROR}');
+													TPL::pack();
 												}
 											}
 										}
 										else
 										{
-											core::s('tpl')->addTpl('alert_error');
-											core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PASSWORD_CONFIRM_ERROR}');
-											core::s('tpl')->display();
+											TPL::addTpl('alert_error');
+											TPL::add('ALERT_MESSAGE','{L_PASSWORD_CONFIRM_ERROR}');
+											TPL::pack();
 										}
 									}
 									else
 									{
-										core::s('tpl')->addTpl('alert_error');
-										core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
-										core::s('tpl')->display();
+										TPL::addTpl('alert_error');
+										TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
+										TPL::pack();
 									}
 								}
 								else
 								{
-									core::s('tpl')->addTpl('alert_error');
-									core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PERMISSION_AUTH_ADD_USER}');
-									core::s('tpl')->display();
+									TPL::addTpl('alert_error');
+									TPL::add('ALERT_MESSAGE','{L_PERMISSION_AUTH_ADD_USER}');
+									TPL::pack();
 								}
 								break;
 							
@@ -697,31 +701,31 @@ VALUES
 										$sql = new SQLObject();
 										if($sql->exec("DELETE FROM " . $sql->table('auth_users') . " WHERE (user_id = " . intval($_GET['user_id']) . ")"))
 										{
-											core::s('tpl')->addTpl('alert_success');
-											core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_USER_DELETED}');
-											core::s('tpl')->assignCond('BACKLINK',true);
-											core::s('tpl')->assignVar('BACKLINK','./acp.php?c=users&amp;section=users');
-											core::s('tpl')->assignVar('BACKLINK_TEXT','{L_BACKLINK}');
+											TPL::addTpl('alert_success');
+											TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_USER_DELETED}');
+											TPL::cond('BACKLINK',true);
+											TPL::add('BACKLINK','./acp.php?c=users&amp;section=users');
+											TPL::add('BACKLINK_TEXT','{L_BACKLINK}');
 										}
 										else
 										{
-											core::s('tpl')->addTpl('alert_error');
-											core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_DELETE_USER_ERROR}');
+											TPL::addTpl('alert_error');
+											TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_DELETE_USER_ERROR}');
 										}
-										core::s('tpl')->display();
+										TPL::pack();
 									}
 									else
 									{
-										core::s('tpl')->addTpl('alert_error');
-										core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
-										core::s('tpl')->display();
+										TPL::addTpl('alert_error');
+										TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
+										TPL::pack();
 									}
 								}
 								else
 								{
-									core::s('tpl')->addTpl('alert_error');
-									core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PERMISSION_AUTH_DELETE_USER}');
-									core::s('tpl')->display();
+									TPL::addTpl('alert_error');
+									TPL::add('ALERT_MESSAGE','{L_PERMISSION_AUTH_DELETE_USER}');
+									TPL::pack();
 								}
 								break;
 						}
@@ -774,44 +778,44 @@ VALUES";
 													}
 												}
 												
-												core::s('tpl')->addTpl('alert_success');
+												TPL::addTpl('alert_success');
 												if(!isset($_POST['group']['permissions']) || $perm == 2)
-													core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_PERMISSIONS}');
+													TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_PERMISSIONS}');
 												elseif($perm == 1)
-													core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_SOME_PERMISSIONS}');
+													TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_SOME_PERMISSIONS}');
 												else
-													core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_NO_PERMISSIONS}');
-												core::s('tpl')->assignCond('BACKLINK',true);
-												core::s('tpl')->assignVar('BACKLINK','./acp.php?c=users&amp;section=groups');
-												core::s('tpl')->assignVar('BACKLINK_TEXT','{L_BACKLINK}');
-												core::s('tpl')->display();
+													TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ADDED_NO_PERMISSIONS}');
+												TPL::cond('BACKLINK',true);
+												TPL::add('BACKLINK','./acp.php?c=users&amp;section=groups');
+												TPL::add('BACKLINK_TEXT','{L_BACKLINK}');
+												TPL::pack();
 											}
 											else
 											{
-												core::s('tpl')->addTpl('alert_error');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_ADD_GROUP_ERROR}');
-												core::s('tpl')->display();
+												TPL::addTpl('alert_error');
+												TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_ADD_GROUP_ERROR}');
+												TPL::pack();
 											}
 										}
 										else
 										{
-											core::s('tpl')->addTpl('alert_error');
-											core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_GROUPNAME}');
-											core::s('tpl')->display();
+											TPL::addTpl('alert_error');
+											TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_INVALID_GROUPNAME}');
+											TPL::pack();
 										}
 									}
 									else
 									{
-										core::s('tpl')->addTpl('alert_error');
-										core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
-										core::s('tpl')->display();
+										TPL::addTpl('alert_error');
+										TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_TOO_LITTLE_DATA}');
+										TPL::pack();
 									}
 								}
 								else
 								{
-									core::s('tpl')->addTpl('alert_error');
-									core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PERMISSION_AUTH_ADD_GROUP}');
-									core::s('tpl')->display();
+									TPL::addTpl('alert_error');
+									TPL::add('ALERT_MESSAGE','{L_PERMISSION_AUTH_ADD_GROUP}');
+									TPL::pack();
 								}
 								break;
 							
@@ -825,31 +829,31 @@ VALUES";
 										{
 											if($sql->exec("DELETE FROM " . $sql->table('auth_groups') . " WHERE (group_id = " . intval($_GET['group_id']) . ")"))
 											{
-												core::s('tpl')->addTpl('alert_success');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_DELETED}');
-												core::s('tpl')->assignCond('BACKLINK',true);
-												core::s('tpl')->assignVar('BACKLINK','./acp.php?c=users&amp;section=groups');
-												core::s('tpl')->assignVar('BACKLINK_TEXT','{L_BACKLINK}');
+												TPL::addTpl('alert_success');
+												TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_DELETED}');
+												TPL::cond('BACKLINK',true);
+												TPL::add('BACKLINK','./acp.php?c=users&amp;section=groups');
+												TPL::add('BACKLINK_TEXT','{L_BACKLINK}');
 											}
 											else
 											{
-												core::s('tpl')->addTpl('alert_error');
-												core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ONLY_PERMISSIONS_DELETED}');
+												TPL::addTpl('alert_error');
+												TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_GROUP_ONLY_PERMISSIONS_DELETED}');
 											}
 										}
 										else
 										{
-											core::s('tpl')->addTpl('alert_error');
-											core::s('tpl')->assignVar('ALERT_MESSAGE','{L_AUTH_ALERT_DELETE_GROUP_ERROR}');
+											TPL::addTpl('alert_error');
+											TPL::add('ALERT_MESSAGE','{L_AUTH_ALERT_DELETE_GROUP_ERROR}');
 										}
-										core::s('tpl')->display();
+										TPL::pack();
 									}
 								}
 								else
 								{
-									core::s('tpl')->addTpl('alert_error');
-									core::s('tpl')->assignVar('ALERT_MESSAGE','{L_PERMISSION_AUTH_DELETE_GROUP}');
-									core::s('tpl')->display();
+									TPL::addTpl('alert_error');
+									TPL::add('ALERT_MESSAGE','{L_PERMISSION_AUTH_DELETE_GROUP}');
+									TPL::pack();
 								}
 								break;
 						}

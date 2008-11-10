@@ -5,7 +5,7 @@ class module_core
 	{
 		$cfg = core::s('cfg');
 		
-		core::s('tpl')->assignVar('SITE_TITLE','{L_SITE_CONFIG} &mdash; {SITE_HEADER} / {L_ACP}');
+		TPL::add('SITE_TITLE','{L_SITE_CONFIG} &mdash; {SITE_HEADER} / {L_ACP}');
 		
 		$sql = new SQLObject();
 		if($sql->query("
@@ -24,11 +24,11 @@ WHERE (module = 'core')"))
 					case('boolean'):
 						if((int) $item->value == 0) $value = false;
 						else $value = true;
-						core::s('tpl')->assignCond('MODULE_CONFIG:' . strtoupper($item->name),$value);
+						TPL::cond('MODULE_CONFIG:' . strtoupper($item->name),$value);
 						break;
 					default: $value = $item->value; break;
 				}
-				core::s('tpl')->assignVar('MODULE_CONFIG:' . strtoupper($item->name),$value);
+				TPL::add('MODULE_CONFIG:' . strtoupper($item->name),$value);
 			}
 		}
 		
@@ -48,7 +48,7 @@ WHERE (module = 'core')"))
 					'LANG_ACTIVE' => ($lang == $cfg['etc']['core']['site_lang']) ? true : false
 				)
 			);
-		core::s('tpl')->assignLoop('MODULE_CONFIG:SITE_LANG',$f_langs);
+		TPL::assignAsLoop('MODULE_CONFIG:SITE_LANG',$f_langs);
 		$f_langs = array();
 		foreach($langs as $lang)
 			$f_langs[] = array(
@@ -57,7 +57,7 @@ WHERE (module = 'core')"))
 					'LANG_ACTIVE' => ($lang == $cfg['etc']['core']['acp_lang']) ? true : false
 				)
 			);
-		core::s('tpl')->assignLoop('MODULE_CONFIG:ACP_LANG',$f_langs);
+		TPL::assignAsLoop('MODULE_CONFIG:ACP_LANG',$f_langs);
 		
 		$dir = dir('./styles/');
 		while($file = $dir->read())
@@ -91,7 +91,7 @@ WHERE (module = 'core')"))
 			if(!isset($info['author'])) $info['author'] = '{L_UNKNOWN}';
 			if(!isset($info['preview'])) { $preview = false; $info['preview'] = './styles/.acp/media/images/style_preview.png'; }
 			
-			if($style == $cfg['etc']['core']['site_style']) core::s('tpl')->assignVar('MODULE_CONFIG:SITE_STYLE_NAME',(strlen($info['name']) > 24) ? mb_substr($info['name'],0,24,'UTF-8').'...' : $info['name']);
+			if($style == $cfg['etc']['core']['site_style']) TPL::add('MODULE_CONFIG:SITE_STYLE_NAME',(strlen($info['name']) > 24) ? mb_substr($info['name'],0,24,'UTF-8').'...' : $info['name']);
 			
 			$f_styles[] = array(
 				'STYLE_CODENAME' => $style,
@@ -107,41 +107,42 @@ WHERE (module = 'core')"))
 			);
 		}
 		
-		core::s('tpl')->assignLoop('MODULE_CONFIG:SITE_STYLE',$f_styles);
+		TPL::assignAsLoop('MODULE_CONFIG:SITE_STYLE',$f_styles);
 	}
 }
 
-$this->modules[$GLOBALS['MODULE_NAME']] = new module_core();
+Modules::$modules->{$GLOBALS['MODULE_NAME']} = new module_core();
+Langs::load('core');
 
 if(
 	(defined('IN_SYS') && IN_SYS)
 	|| (defined('IN_ACP') && IN_ACP)
 ){
-	core::s('tpl')->addTpl('header');
-	if(!isset($_GET['c'])) core::s('tpl')->addTpl('homepage');
-	core::s('tpl')->addQueue('$this->addTpl(\'footer\');');
+	TPL::addTpl('header');
+	if(!isset($_GET['c'])) TPL::addTpl('homepage');
+	TPL::modify('self::addTpl(\'footer\');self::$output .= self::$loadedTpls[\'footer\'];');
 }
 
 if(defined('IN_ACP') && IN_ACP)
 {
-	$this->modules['menu']->menu->acp->main->addItem(
+	Modules::$modules->menu->menu->acp->main->addItem(
 		'./acp.php',
 		'{L_ACP_HOME}',
 		array('ACTIVE' => (!isset($_GET['c'])))
 	);
-	$this->modules['menu']->menu->acp->main->addItem(
+	Modules::$modules->menu->menu->acp->main->addItem(
 		'./',
 		'{L_INDEX}',
 		array('ACTIVE' => false)
 	);
 	if(permission('core','modules','show'))
-		$this->modules['menu']->menu->acp->main->addItem(
+		Modules::$modules->menu->menu->acp->main->addItem(
 			'./acp.php?c=modules',
 			'{L_MODULES}',
 			array('ACTIVE' => (isset($_GET['c']) && $_GET['c'] == 'modules'))
 		);
 	if(permission('core','config','edit'))
-		$this->modules['menu']->menu->acp->main->addItem(
+		Modules::$modules->menu->menu->acp->main->addItem(
 			'./acp.php?c=config&amp;module=core',
 			'{L_SITE_CONFIG}',
 			array('ACTIVE' => (isset($_GET['c'],$_GET['module']) && $_GET['c'] == 'config' && $_GET['module'] == 'core'))
@@ -149,7 +150,7 @@ if(defined('IN_ACP') && IN_ACP)
 	
 	if(!isset($_GET['c']))
 	{
-		core::s('tpl')->assignVar('SITE_TITLE','{SITE_HEADER} / {L_ACP}');
+		TPL::add('SITE_TITLE','{SITE_HEADER} / {L_ACP}');
 	}
 	else
 	{
@@ -161,8 +162,8 @@ if(defined('IN_ACP') && IN_ACP)
 				break;*/
 			
 			case('modules'):
-				core::s('tpl')->addTpl('modules');
-				core::s('tpl')->assignVar('SITE_TITLE','{L_MODULES} &mdash; {SITE_HEADER} / {L_ACP}');
+				TPL::addTpl('modules');
+				TPL::add('SITE_TITLE','{L_MODULES} &mdash; {SITE_HEADER} / {L_ACP}');
 				
 				$codenames = array();
 				
@@ -186,7 +187,7 @@ ORDER BY seq ASC"))
 								'MODULE_PATH' => './app/modules/' . $module->filename,
 								'MODULE_ICON' => './app/modules/' . str_replace('.mod.php','.icon.png',$module->filename),
 								'conds' => array(
-									'ACTIVE' => (int) $module->active
+									'ACTIVE' => (boolean)(int) $module->active
 								)
 							);
 						}
@@ -199,7 +200,7 @@ ORDER BY seq ASC"))
 								'MODULE_PATH' => './modules/' . $module->filename,
 								'MODULE_ICON' => './modules/' . str_replace('.mod.php','.icon.png',$module->filename),
 								'conds' => array(
-									'ACTIVE' => (int) $module->active
+									'ACTIVE' => (boolean)((int) $module->active)
 								)
 							);
 						}
@@ -245,17 +246,17 @@ ORDER BY seq ASC"))
 					}
 				}
 				
-				if(count($f_modules_core)) core::s('tpl')->assignCond('MODULES_CORE',true);
-				else core::s('tpl')->assignCond('MODULES_CORE',false);
-				core::s('tpl')->assignLoop('MODULES_CORE',$f_modules_core);
+				if(count($f_modules_core)) TPL::cond('MODULES_CORE',true);
+				else TPL::cond('MODULES_CORE',false);
+				TPL::assignAsLoop('MODULES_CORE',$f_modules_core);
 				
-				if(count($f_modules_additional) != 0) core::s('tpl')->assignCond('MODULES_ADDITIONAL',true);
-				else core::s('tpl')->assignCond('MODULES_ADDITIONAL',false);
-				core::s('tpl')->assignLoop('MODULES_ADDITIONAL',$f_modules_additional);
+				if(count($f_modules_additional) != 0) TPL::cond('MODULES_ADDITIONAL',true);
+				else TPL::cond('MODULES_ADDITIONAL',false);
+				TPL::assignAsLoop('MODULES_ADDITIONAL',$f_modules_additional);
 
-				if(count($f_modules_available) != 0) core::s('tpl')->assignCond('MODULES_AVAILABLE',true);
-				else core::s('tpl')->assignCond('MODULES_AVAILABLE',false);
-				core::s('tpl')->assignLoop('MODULES_AVAILABLE',$f_modules_available);
+				if(count($f_modules_available) != 0) TPL::cond('MODULES_AVAILABLE',true);
+				else TPL::cond('MODULES_AVAILABLE',false);
+				TPL::assignAsLoop('MODULES_AVAILABLE',$f_modules_available);
 				
 				break;
 		}

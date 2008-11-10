@@ -30,13 +30,13 @@ class module_menu
 		{	
 			$this->menu->acp->modules->addItem('./acp.php?c=menu','{L_MODULE_MENU}',array('ACTIVE' => (isset($_GET['c']) && $_GET['c'] == 'menu')));
 			
-			core::s('tpl')->addQueue('
-			$mod->modules[\'menu\']->menu->acp->main->make();
-			$mod->modules[\'menu\']->menu->acp->modules->make();
+			TPL::modify('
+			Modules::$modules->menu->menu->acp->main->make();
+			Modules::$modules->menu->menu->acp->modules->make();
 			
-			if(!$mod->modules[\'menu\']->menu->acp->sub->numItems()) $this->assignCond(\'MENU_ACP_SUB\',false);
-			else $this->assignCond(\'MENU_ACP_SUB\',true);
-			$mod->modules[\'menu\']->menu->acp->sub->make();',
+			if(!Modules::$modules->menu->menu->acp->sub->numItems()) self::cond(\'MENU_ACP_SUB\',false);
+			else self::assignCond(\'MENU_ACP_SUB\',true);
+			Modules::$modules->menu->menu->acp->sub->make();',
 			false);
 			//echo('in menu module - on line 42 :D :: http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] != '' ? '?'.$_SERVER['QUERY_STRING'] : ''));
 		}
@@ -82,9 +82,9 @@ class MenuObject
 	
 	public function make()
 	{
-		core::s('tpl')->assignLoop($this->loopKey,$this->items);
+		TPL::assignAsLoop($this->loopKey,$this->items);
 	}
 }
 
-$this->modules['menu'] = new module_menu();
+Modules::$modules->menu = new module_menu();
 ?>

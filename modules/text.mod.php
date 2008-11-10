@@ -4,11 +4,11 @@ class module_text
 
 }
 
-$this->modules['text'] = new module_text();
+Modules::$modules->text = new module_text();
 if(defined('IN_SYS') && IN_SYS)
 {
-	core::s('tpl')->addQueue('
-	preg_match_all(\'#{TEXT:([a-zA-Z0-9-_]+)}#s\',$this->output,$arr);
+	TPL::modify('
+	preg_match_all(\'#{TEXT:([a-zA-Z0-9-_]+)}#s\',self::$output,$arr);
 	if(count($arr[1]))
 	{
 		$cfg = core::s(\'cfg\');
@@ -21,13 +21,13 @@ if(defined('IN_SYS') && IN_SYS)
 			else $query .= "))";
 		}
 		if($sql->query($query))
-			foreach($sql->fetch() as $text) $this->output = str_replace(\'{TEXT:\' . $text->text_key . \'}\',$text->text_value,$this->output);
+			foreach($sql->fetch() as $text) self::$output = str_replace(\'{TEXT:\' . $text->text_key . \'}\',$text->text_value,self::$output);
 	}',true);
 }
 
 if(defined('IN_ACP') && IN_ACP)
 {
-	$this->modules['menu']->menu->acp->modules->addItem(
+	Modules::$modules->menu->menu->acp->modules->addItem(
 		'./acp.php?c=' . $MODULE_NAME,
 		'{L_MODULE_TEXT}',
 		array('ACTIVE' => (isset($_GET['c']) && $_GET['c'] == $MODULE_NAME))

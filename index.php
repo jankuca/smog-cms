@@ -5,7 +5,7 @@ define('IN_SYS',true);
 //define('TEMPLATE_DIRPATH','./styles/default/');
 require('./config.php');
 
-$tpl->assignLoop(
+TPL::assignAsLoop(
 	'MENU',
 	array(
 		array(
@@ -67,7 +67,7 @@ $tpl->assignLoop(
 	)
 );
 
-$tpl->assignLoop(
+TPL::assignAsLoop(
 	'MENU.SUBMENU.2',
 	array(
 		array(
@@ -81,7 +81,7 @@ $tpl->assignLoop(
 	)
 );
 
-$tpl->display();
+TPL::pack();
 echo(round(microtime(true) - $syslog->start,3) * 1000 . ' ms');
 /*echo('<br style="clear:both" />Output generated in <strong>' . round((microtime(true) - $start) * 1000) . ' ms</strong>.');
 echo('<br /><br />');*/
